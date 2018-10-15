@@ -4,17 +4,8 @@
 [image2]: ./writeup_imgs/bad_architect_train_loss.png
 [image3]: ./writeup_imgs/good2_architect_train_loss.png
 [image4]: ./writeup_imgs/good_architect_train_loss.png
-[image5]: ./writeup_imgs/Detected_Objects_World3.png
-[image6]: ./writeup_imgs/Detected_Objects_World3_2.png
-[image7]: ./writeup_imgs/Results_World1_1.png
-[image8]: ./writeup_imgs/Results_World1_2.png
-[image9]: ./writeup_imgs/Results_World2_1.png
-[image10]: ./writeup_imgs/Results_World2_2.png
-[image11]: ./writeup_imgs/Results_World3_1.png
-[image12]: ./writeup_imgs/Results_World3_2.png
-[image13]: ./writeup_imgs/Accuracy_SVM.png
-[image14]: ./writeup_imgs/Confusion_Matrix_Unnorm.png
-[image15]: ./writeup_imgs/Confusion_Matrix_Norm.png
+[image5]: ./writeup_imgs/model.png
+
 ## Deep Learning Project: Follow Me (Segmentation using Fully Connected Convolutional Networks)
 
 
@@ -29,13 +20,18 @@ Given set of images and their mask (segmented images), the idea is to train a fu
 
 ![alt text][image1]
 
-The encoder portion is convolution network and then it reduces to deeper 1x1 convolution layer. For the decoder part bilinear sampling is used to up-sample the images and eventually get the same image size for the output which is the segmented image.
+##### Encoder and 1x1 Convolution
+The encoder portion is convolution network and then it reduces to deeper 1x1 convolution layer: when convolutional layers are fed into fully connected layer, the output is flattened and this causes any spacial information to be lost, this can be avoided by using 1x1 convolution. Note that 1x1 convlution can also be useful for dimensionality reduction purposes and it also gives advantage over fully connected layer because any image size can be fed to the network.
+
+
+##### Decoder and Skip Connections
+For the decoder part bilinear sampling is used to up-sample the images to have desired image size and eventually get the same image size for the output which is the segmented image. One effect of using convoltional layers is that the scope is narrowed down by looking at some features and loosing the bigger picture as a result, therefore to avoid this problem skip connections is used. This is done by concatenating the output of a layer from encoder with the up-sampled input image of the same size on decoder side (visualizaion of skip connection is shwon in the image provided in Netowrk architecture section).
 
 Some methods that are further used to improve the performance are:
 
 * Instead of using regular convolution layer, we use separable convolution layer so each channel will get traversed by 1 kernel and then 1x1 convolution is used to get desired number of output channels or feature maps. Note that separable convolution is also used for decoder part. 
 * Batch normalization which acts as regularization and produces better result overall. 
-* Layer concatenation is used to skip connections and retain some of the finer details.
+* Layer concatenation is used to skip connections and retain some of the finer details (explained above)
 
 
 #### 2. Network architecture
@@ -48,6 +44,10 @@ The architecture of the network is as follow:
 * 1x1 convolution layer with using 256 kernels + batch normalization which results in 256 feature maps (layer3)
 * (decoder) bilinear up-sampling by factor of 2 + layer concatenation (layer 3 and layer 1) + separable convolution with 128 filters of size 3x3 and stride 1 + batch normalization (layer4)
 * (decoder) bilinear up-sampling by factor of 2 + layer concatenation (layer4 and inputs) + separable convolution with 64 filters of size 3x3 and stride 1 + batch normalization (x)
+
+The image below shows the architecture:
+
+![alt text][image5]
 
 The code below shows more details for fully convolutional layer:
 
@@ -80,7 +80,7 @@ num_epochs = 50
 steps_per_epoch = 65
 ```
 
-
+With higher learning rate the training error was quite large and unstable, so it was decreased to 0.0015 for better stability and lower error rate and overall performance. The bacth size was chosen to be 64 for each epoch and the number of epoches was increased to 50 to achieve low error rate and better performance. Steps per epoch is simply `number_of_training_iamges/num_epochs`.
 #### 4. Results
 The final score is used to check the overall performance of loss. It is calculated as below:
 
@@ -260,6 +260,5 @@ Network 3 was chosen to be a good network since it has simpler model and perform
 
 To see images of the segmentated image by the network and the true segmented image side by side please refer to ipython notebook (located in `code` folder)
 
-Note: Also different learning rates was used starting from 0.2 and it was observed that 0.0015 was the best choice to not have so much ossilation and stable result.
 #### 5. Further improvements:
-To further improve the performace, using more data would be helpful: see where the weaknesses of the network are and gather data related to those areas. Also using different optimization methods might help. More compelex architecture with more layers can also improve performance if more data is gathered.
+This model is only used to detect people and the target, but it can be trained to detect other classes as well (like cat, dog, etc). To further improve the performace, using more data would be helpful: see where the weaknesses of the network are and gather data related to those areas. Also using different optimization methods might help. More compelex architecture with more layers can also improve performance if more data is gathered.
